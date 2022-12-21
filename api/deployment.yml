@@ -14,21 +14,9 @@ spec:
     spec:
       imagePullSecrets:
         - name: dockersecret
-      volumes:
-      - name: oracle-s3-volume
-        hostPath:
-          path: /tmp/oracle_s3/webapi/files
-      - name: nimbus-webapi-staging-volume
-        persistentVolumeClaim:
-          claimName: nimbus-webapi-staging-pvc
       containers:
         - name: webapi
           image: fra.ocir.io/fr1gfcijhydg/nimbus/webapi-staging:latest
-          volumeMounts:
-          - name: oracle-s3-volume
-            mountPath: /var/lib/nimbus/files
-          - name: nimbus-webapi-staging-volume
-            mountPath: /var/lib/nimbus/deploy
           ports:
           - containerPort: 5000
             protocol: TCP
