@@ -1,0 +1,94 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: webapi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webapi
+  template:
+    metadata:
+      labels:
+        app: webapi
+    spec:
+      imagePullSecrets:
+        - name: dockersecret
+      volumes:
+      - name: oracle-s3-volume
+        hostPath:
+          path: /tmp/oracle_s3/webapi/files
+      - name: nimbus-webapi-staging-volume
+        persistentVolumeClaim:
+          claimName: nimbus-webapi-staging-pvc
+      containers:
+        - name: webapi
+          image: fra.ocir.io/fr1gfcijhydg/nimbus/webapi-staging:latest
+          volumeMounts:
+          - name: oracle-s3-volume
+            mountPath: /var/lib/nimbus/files
+          - name: nimbus-webapi-staging-volume
+            mountPath: /var/lib/nimbus/deploy
+          ports:
+          - containerPort: 5000
+            protocol: TCP
+          - containerPort: 5500
+            protocol: TCP
+          env:
+            - name: Redis__Host
+              value: "130.61.210.123"
+            - name: CORECLR_ENABLE_PROFILING
+              value: "1"
+            - name: CORECLR_PROFILER
+              value: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+            - name: CORECLR_PROFILER_PATH
+              value: "/nimbus/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
+            - name: DD_DOTNET_TRACER_HOME
+              value: "/nimbus/datadog"
+            - name: DD_ENV
+              value: "staging"
+            - name: DD_SERVICE
+              value: "webapi"
+            - name: DD_VERSION
+              value: "7.35.2"
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_AGENT_HOST
+              value: "datadog"
+            - name: DD_APM_DD_URL
+              value: "https://trace.agent.datadoghq.eu"
+            - name: DD_TRACE_AGENT_URL
+              value: "http://localhost:8126"
+            - name: ASPNETCORE_ENVIRONMENT
+              value: "Staging"
+            - name: ConnectionStrings__DefaultConnection
+              value: "server=130.61.210.123;database=nimbus-staging;user=root;password=5CjVYTd8JWcE"
+            - name: ConnectionStrings__AnalyticsConnection
+              value: "server=130.61.210.123;database=nimbus-analytics;user=root;password=5CjVYTd8JWcE"
+            - name: Quartz__quartz.dataSource.default.connectionString
+              value: "server=130.61.210.123;database=quartznet;user=root;password=5CjVYTd8JWcE"
+            - name: Nimbus__Kafka__KafkaServer
+              value: "130.61.210.123:9092"
+            - name: Serilog__WriteTo__1__Args__nodeUris
+              value: "http://130.61.210.123:9200"
+            - name: ElasticApm__ServerUrl
+              value: "http://130.61.210.123:8200"
+            - name: ElasticApm__Environment
+              value: "staging"
+            - name: ElasticApm__TransactionSampleRate
+              value: "0"
+            - name: Nimbus__Ssh__TmateWsServer
+              value: "ws://130.61.210.123:4001/ws/session/cogniteam3"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapi
+spec:
+  type: LoadBalancer
+  selector:
+    app: webapi
+  ports:
+  - protocol: TCP
+    port: 5500
+    targetPort: 5500
