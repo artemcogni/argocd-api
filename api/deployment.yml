@@ -79,16 +79,3 @@ spec:
               mountPath: /var/lib/nimbus/files
             - name: deploy
               mountPath: /var/lib/nimbus/deploy
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: webapi
-spec:
-  type: LoadBalancer
-  selector:
-    app: webapi
-  ports:
-  - protocol: TCP
-    port: 5500
-    targetPort: 5500
